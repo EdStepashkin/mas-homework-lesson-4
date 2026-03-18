@@ -1,13 +1,11 @@
 import os
 from datetime import datetime
-from langchain_core.tools import tool
 from ddgs import DDGS
 import trafilatura
 
 # Імпортуємо наші налаштування
 from config import settings
 
-@tool
 def web_search(query: str) -> list[dict]:
     """
     Виконує пошук в інтернеті за запитом.
@@ -23,7 +21,6 @@ def web_search(query: str) -> list[dict]:
         return [{"error": f"Помилка пошуку: {str(e)}"}]
 
 
-@tool
 def read_url(url: str) -> str:
     """
     Завантажує та витягує повний текст веб-сторінки за вказаним URL.
@@ -48,7 +45,6 @@ def read_url(url: str) -> str:
         return f"Помилка читання URL: {str(e)}"
 
 
-@tool
 def write_report(filename: str, content: str) -> str:
     """
     Зберігає згенерований Markdown-звіт у файл.
@@ -67,7 +63,7 @@ def write_report(filename: str, content: str) -> str:
     except Exception as e:
         return f"Помилка збереження файлу: {str(e)}"
 
-@tool
+
 def get_current_time() -> str:
     """
     Повертає поточний місцевий час та дату.
@@ -77,7 +73,6 @@ def get_current_time() -> str:
     return f"Поточний час та дата: {now.strftime('%Y-%m-%d %H:%M:%S')}"
 
 
-@tool
 def read_local_file(filepath: str) -> str:
     """
     Читає вміст локального файлу (наприклад, .md, .txt) за заданим шляхом.
@@ -94,3 +89,84 @@ def read_local_file(filepath: str) -> str:
         return f"Помилка: Файл не знайдено за шляхом {filepath}"
     except Exception as e:
         return f"Помилка читання файлу: {str(e)}"
+
+# Маппінг функцій для швидкого доступу з ручного циклу
+TOOL_FUNCTIONS = {
+    "web_search": web_search,
+    "read_url": read_url,
+    "write_report": write_report,
+    "get_current_time": get_current_time,
+    "read_local_file": read_local_file
+}
+
+# Визначення інструментів у форматі JSON Schema
+TOOL_SCHEMAS = [
+    {
+        "name": "web_search",
+        "description": "Виконує пошук в інтернеті за запитом. Повертає список знайдених сторінок із заголовком (title), посиланням (href) та коротким описом (body). Використовуй це для знаходження актуальної інформації.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Пошуковий запит."
+                }
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "read_url",
+        "description": "Завантажує та витягує повний текст веб-сторінки за вказаним URL. Використовуй цей інструмент, щоб детально прочитати статтю, знайдену через web_search.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "Пряме посилання (URL) на сторінку."
+                }
+            },
+            "required": ["url"]
+        }
+    },
+    {
+        "name": "write_report",
+        "description": "Зберігає згенерований Markdown-звіт у файл. Приймає назву файлу (наприклад, report.md) та текст.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string",
+                    "description": "Назва файлу, наприклад 'report.md'."
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Повний вміст звіту у форматі Markdown."
+                }
+            },
+            "required": ["filename", "content"]
+        }
+    },
+    {
+        "name": "get_current_time",
+        "description": "Повертає поточний місцевий час та дату. Використовуй цей інструмент, коли користувач запитує щось відносно поточного часу (наприклад, актуальні новини за сьогодні).",
+        "parameters": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "read_local_file",
+        "description": "Читає вміст локального файлу (наприклад, .md, .txt) за заданим шляхом. Корисно, якщо потрібно проаналізувати вже існуючий звіт.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "filepath": {
+                    "type": "string",
+                    "description": "Шлях до файлу."
+                }
+            },
+            "required": ["filepath"]
+        }
+    }
+]
